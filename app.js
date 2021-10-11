@@ -8,6 +8,7 @@ const security = require('./helpers/security')
 const auth = require('./helpers/auth')
 const cacheRoute = require('./helpers/cache-route')
 const socket = require('./helpers/socket')
+const twitterController = require('./twitter');
 
 const app = express()
 
@@ -63,7 +64,17 @@ app.get('/webhook/twitter', function(request, response) {
  **/
 app.post('/webhook/twitter', function(request, response) {
 
-  console.log(request.body)
+  // console.log(request.body)
+  const payload = request.body;
+
+  if(payload.direct_message_events) {
+    const message_event = payload.direct_message_events[0]
+    // check if event is a message_create event and if it is incoming by validating sender ID    
+    if(message_event.type == 'message_create' && message_event.message_create.sender_id !== '') {
+      if(message_event.message_create.message_data && message_event.message_create.message_data.text)  
+        twitterController.handleRequest(message_event.message_create.sender_id, message_event.message_create.message_data.text)
+      }
+  }
   
   socket.io.emit(socket.activity_event, {
     internal_id: uuid(),
